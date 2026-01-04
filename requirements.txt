@@ -1,0 +1,13 @@
+# Telegram bot
+python-telegram-bot>=21.0
+
+# Voice transcription (choose one)
+# faster-whisper is recommended - faster and uses less memory
+faster-whisper>=1.0.0
+# openai-whisper  # Alternative, official but slower
+
+# For AI classifier (optional if using Claude Code for classification)
+anthropic>=0.40.0
+
+# Async support
+aiofiles>=24.0.0

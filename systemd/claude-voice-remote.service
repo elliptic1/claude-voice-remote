@@ -1,0 +1,31 @@
+[Unit]
+Description=Claude Voice Remote - Telegram bot for Claude Code
+After=network.target
+
+[Service]
+Type=simple
+User=todd
+Group=todd
+
+# Set your actual paths here
+WorkingDirectory=/media/todd/androiddev/workspace/claude-voice-remote
+ExecStart=/usr/bin/python3 /media/todd/androiddev/workspace/claude-voice-remote/bot.py
+
+# Environment variables - set your token here or in config.py
+Environment="TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE"
+Environment="AUTHORIZED_USER_IDS="
+Environment="CLAUDE_CODE_PATH=claude"
+Environment="CLAUDE_WORKING_DIR=/media/todd/androiddev/workspace"
+Environment="WHISPER_MODEL=base"
+
+# Restart on failure
+Restart=on-failure
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=claude-voice-remote
+
+[Install]
+WantedBy=multi-user.target
