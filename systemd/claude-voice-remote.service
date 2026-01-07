@@ -4,18 +4,18 @@ After=network.target
 
 [Service]
 Type=simple
-User=todd
-Group=todd
+User=YOUR_USER
+Group=YOUR_USER
 
 # Set your actual paths here
-WorkingDirectory=/media/todd/androiddev/workspace/claude-voice-remote
-ExecStart=/usr/bin/python3 /media/todd/androiddev/workspace/claude-voice-remote/bot.py
+WorkingDirectory=/path/to/claude-voice-remote
+ExecStart=/usr/bin/python3 /path/to/claude-voice-remote/bot.py
 
 # Environment variables - set your token here or in config.py
 Environment="TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN_HERE"
-Environment="AUTHORIZED_USER_IDS="
+Environment="AUTHORIZED_USER_IDS=YOUR_USER_ID"
 Environment="CLAUDE_CODE_PATH=claude"
-Environment="CLAUDE_WORKING_DIR=/media/todd/androiddev/workspace"
+Environment="CLAUDE_WORKING_DIR=/path/to/your/workspace"
 Environment="WHISPER_MODEL=base"
 
 # Restart on failure

@@ -1,8 +1,16 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 .env
+.env.local
 sessions.db
 *.log
 .DS_Store
+*.ogg
+*.wav
+*.mp3
+.idea/
+*.swp
+.vscode/
