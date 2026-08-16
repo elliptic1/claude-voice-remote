@@ -15,7 +15,7 @@ AUTHORIZED_USER_IDS = [
 
 # Claude Code settings
 CLAUDE_CODE_PATH = os.environ.get("CLAUDE_CODE_PATH", "claude")
-CLAUDE_WORKING_DIR = os.environ.get("CLAUDE_WORKING_DIR", os.path.expanduser("~/workspace"))
+CLAUDE_WORKING_DIR = os.environ.get("CLAUDE_WORKING_DIR", "/media/todd/androiddev/workspace")
 
 # Whisper settings
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")  # tiny, base, small, medium, large

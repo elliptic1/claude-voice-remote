@@ -29,6 +29,7 @@ from config import (
     TRUNCATE_SUFFIX,
 )
 from claude_runner import run_claude, test_claude_connection
+from mayor_runner import run_mayor, check_mayor_running, start_mayor
 from orchestrator import get_session_manager, get_router, Session
 from transcribe import download_and_transcribe
 
@@ -67,22 +68,57 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         return
 
+    mayor_status = "ON" if context.user_data.get("use_mayor", False) else "OFF"
     await update.message.reply_text(
         "Claude Voice Remote\n\n"
         "Send me text or voice messages and I'll forward them to Claude Code.\n\n"
         "Commands:\n"
         "/status - Check connection & current session\n"
+        "/mayor - Toggle Mayor mode (multi-project coordinator)\n"
         "/new <name> - Start a new project session\n"
         "/list - List active sessions\n"
         "/switch <name> - Switch to a session\n"
         "/delete <name> - Delete a session\n"
-        "/help - Show this message"
+        "/help - Show this message\n\n"
+        f"Mayor mode: {mayor_status}"
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /help command."""
     await start_command(update, context)
+
+
+async def mayor_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /mayor command - toggle Mayor mode."""
+    user_id = update.effective_user.id
+
+    if not is_authorized(user_id):
+        return
+
+    # Toggle Mayor mode
+    current = context.user_data.get("use_mayor", False)
+    context.user_data["use_mayor"] = not current
+
+    if context.user_data["use_mayor"]:
+        # Check if Mayor is running
+        if not check_mayor_running():
+            await update.message.reply_text(
+                "Starting Mayor session...\n"
+                "This may take a moment."
+            )
+            start_mayor()
+
+        await update.message.reply_text(
+            "Mayor mode: ON\n\n"
+            "Messages will be routed to the Mayor's Office.\n"
+            "The Mayor coordinates across all your projects."
+        )
+    else:
+        await update.message.reply_text(
+            "Mayor mode: OFF\n\n"
+            "Messages will use direct Claude Code sessions."
+        )
 
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -95,6 +131,10 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     await update.message.reply_text("Checking status...")
 
+    # Check Mayor mode and status
+    use_mayor = context.user_data.get("use_mayor", False)
+    mayor_running = check_mayor_running()
+
     # Check Claude Code connection
     claude_ok = await test_claude_connection()
 
@@ -106,6 +146,12 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         current_session = sm.get_session_by_id(current_session_id)
 
     status_lines = []
+
+    # Mayor status
+    status_lines.append(f"Mayor mode: {'ON' if use_mayor else 'OFF'}")
+    status_lines.append(f"Mayor session: {'Running' if mayor_running else 'Not running'}")
+
+    # Claude Code status
     if claude_ok:
         status_lines.append("Claude Code: Connected")
     else:
@@ -132,11 +178,29 @@ async def process_message(
     context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     """Process a message (text or transcribed voice) and send to Claude Code."""
-    sm = get_session_manager()
-    router = get_router()
+    # Check if Mayor mode is enabled
+    use_mayor = context.user_data.get("use_mayor", False)
 
     # Send typing indicator
     await update.message.chat.send_action("typing")
+
+    if use_mayor:
+        # Route to Mayor's Office
+        logger.info(f"Routing to Mayor: {message_text[:100]}...")
+
+        response = await run_mayor(prompt=message_text)
+
+        if response.success:
+            reply_text = truncate_message(response.output)
+            reply_text = "[Mayor]\n\n" + reply_text
+            await update.message.reply_text(reply_text)
+        else:
+            await update.message.reply_text(f"Mayor error: {response.error}")
+        return
+
+    # Standard session-based routing
+    sm = get_session_manager()
+    router = get_router()
 
     # Smart routing: determine which session this message belongs to
     current_db_id = context.user_data.get("current_db_session_id")
@@ -427,6 +491,7 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("status", status_command))
+    application.add_handler(CommandHandler("mayor", mayor_command))
     application.add_handler(CommandHandler("new", new_session_command))
     application.add_handler(CommandHandler("list", list_sessions_command))
     application.add_handler(CommandHandler("switch", switch_session_command))

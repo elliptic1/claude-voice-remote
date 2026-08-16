@@ -28,7 +28,7 @@ async def run_claude(
     continue_recent: bool = False,
     working_dir: Optional[str] = None,
     allowed_tools: Optional[list[str]] = None,
-    timeout: int = 300,
+    timeout: int = 3000,
     enable_browser: bool = True,
 ) -> ClaudeResponse:
     """
